@@ -27,7 +27,11 @@ jobs:
         
     - name: Get tag name from git describe
       id: get_tag_name
-      run: echo "TAG_NAME=$(git describe --tags)" >> $GITHUB_ENV
+      run: |
+          git fetch --tags --force
+          latest_tag=$(git describe --tags --abbrev=0)
+          echo "latest_tag=$(git describe --tags --abbrev=0)" >> "$GITHUB_ENV"
+          
 
     - name: Create Release
       id: create_release
@@ -35,8 +39,8 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: ${{ env.TAG_NAME }}
-        release_name: Unity Package Release
+        tag_name: ${{ env.latest_tag }}
+        release_name: MP4U ${{ env.latest_tag }} Release
         draft: false
         prerelease: false
       
