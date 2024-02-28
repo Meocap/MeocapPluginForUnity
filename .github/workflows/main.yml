@@ -1,0 +1,25 @@
+name: Create Unity Package
+
+on: push
+
+jobs:
+  echo:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - run: |
+        echo "Package List:" 
+        echo packageList
+        find Assets/Plugins/ -name \*.* >> packageList
+        find Assets/ -name \*\Meo*.cs >> packageList
+
+    - run: mkdir a
+
+    - uses: pCYSl5EDgo/create-unitypackage@master
+      with:
+        package-path: 'a/output.unitypackage'
+        include-files: packageList
+    - uses: actions/upload-artifact@master
+      with:
+        path: a
+        name: package
