@@ -7,16 +7,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-
-    - name: Get latest tag
-      id: latest-tag
-      run: echo "::set-output name=tag::$(git describe --tags `git rev-list --tags --max-count=1`)"
-
-
-    - name: Checkout to latest tag
-      uses: actions/checkout@v2
       with:
-        ref: ${{ steps.latest-tag.outputs.tag }}
+        fetch-depth: 0
+        tags: true
     
     - run: |
         echo "Assets/Editor.meta" > packageList
