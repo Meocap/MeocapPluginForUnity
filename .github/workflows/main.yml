@@ -3,23 +3,21 @@ name: Create Unity Package
 on: push
 
 jobs:
-  echo:
+  packaging:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
     - run: |
-        echo "Package List:" 
-        echo packageList
-        find Assets/Plugins/ -name \*.* >> packageList
-        find Assets/ -name \*\Meo*.cs >> packageList
+        echo "Assets/Plugins" > packageList
+        find Assets/ -name \*\Meo*.meta >> packageList
 
-    - run: mkdir a
-
+    - run: mkdir output
+    
     - uses: pCYSl5EDgo/create-unitypackage@master
       with:
-        package-path: 'a/output.unitypackage'
+        package-path: 'output/output.unitypackage'
         include-files: packageList
     - uses: actions/upload-artifact@master
       with:
-        path: a
+        path: output
         name: package
