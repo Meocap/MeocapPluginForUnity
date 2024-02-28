@@ -10,8 +10,10 @@ jobs:
     - run: |
         echo "Assets/Editor.meta" > packageList
         echo "Assets/Scripts.meta" >> packageList
+        echo "Assets/Plugins.meta" >> packageList
         find Assets/Editor -name *.meta >> packageList
         find Assets/Scripts -name Meo*.meta >> packageList
+        find Assets/Plugins -name *.meta >> packageList
 
     - run: mkdir output
     
@@ -19,7 +21,31 @@ jobs:
       with:
         package-path: 'output/output.unitypackage'
         include-files: packageList
-    - uses: actions/upload-artifact@master
+    
+    - name: Create ZIP Archive
+      run: zip -r package.zip output
+        
+    - name: Get tag name from git describe
+      id: get_tag_name
+      run: echo "TAG_NAME=$(git describe --tags)" >> $GITHUB_ENV
+
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        path: output
-        name: package
+        tag_name: ${{ env.TAG_NAME }}
+        release_name: Unity Package Release
+        draft: false
+        prerelease: false
+      
+    - name: Upload Github Release
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: package.zip
+        asset_name: package.zip
+        asset_content_type: application/octet-stream
