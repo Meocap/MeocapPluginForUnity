@@ -29,8 +29,8 @@ jobs:
       id: get_tag_name
       run: |
           git fetch --tags --force
-          latest_tag=$(git describe --tags --abbrev=0)
-          echo "latest_tag=$(git describe --tags --abbrev=0)" >> "$GITHUB_ENV"
+          latest_tag=$(git describe --tags)
+          echo "latest_tag=$(git describe --tags)" >> "$GITHUB_ENV"
           
 
     - name: Create Release
