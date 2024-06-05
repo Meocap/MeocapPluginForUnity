@@ -107,7 +107,3 @@ MonoBehaviour:
     quaternion: {x: -0, y: -0, z: -0, w: 1}
   - bone: 18
     quaternion: {x: -0, y: -0, z: -0, w: 1}
-  - bone: 32
-    quaternion: {x: -0, y: -0, z: -0, w: 1}
-  - bone: 47
-    quaternion: {x: -0, y: -0, z: -0, w: 1}

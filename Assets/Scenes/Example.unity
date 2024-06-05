@@ -1499,6 +1499,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   animator: {fileID: 8785899967837750525}
+  target: {fileID: 8785899967844920105}
   bone_map: {fileID: 11400000, guid: 66ddb5ed5cb9da542bc5d6a84f8c7277, type: 2}
 --- !u!1 &8785899967845021517
 GameObject:

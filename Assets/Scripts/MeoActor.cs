@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using Meocap;
+using static TMPro.SpriteAssetUtilities.TexturePacker_JsonArray;
+using Unity.VisualScripting;
 namespace Meocap.Perform
 {
     [System.Serializable]
@@ -55,7 +57,9 @@ namespace Meocap.Perform
 
 
         public Animator animator;
+        public Transform target;
         public MeocapActorBoneMap bone_map;
+        public Vector3 baseHipsPos;
 
 
 
@@ -104,7 +108,13 @@ namespace Meocap.Perform
             {
                 if (bone == HumanBodyBones.LastBone) break;
                 bone_map.animatorHumanBones.Add(bone, animator.GetBoneTransform(bone));
+                if(bone == HumanBodyBones.Hips)
+                {
+                    var p = GetBone(bone).position;
+                    this.baseHipsPos = new Vector3(p.x,p.y,p.z);
+                }
             }
+
         }
 
         public void SaveBoneMapToAssets()
@@ -127,8 +137,7 @@ namespace Meocap.Perform
             bone_map.BuildDictionaries();
             Debug.Log($"Start with {bone_map.characterTPose.Count} bones to calculate T-Pose offsets");
             Debug.Log($"Start with available {bone_map.animatorHumanBones.Count} bones in the animator");
-            var q = Quaternion.Euler(0, 0, -90);
-            PerformBone(HumanBodyBones.LeftUpperArm,q);
+            InitializeAnimatorHumanBones();
         }
 
         // Update is called once per frame
@@ -137,7 +146,7 @@ namespace Meocap.Perform
 
         }
 
-        public void PerformBone(HumanBodyBones bone,Quaternion rotation)
+        public void PerformBone(HumanBodyBones bone,Quaternion rotation,UniversalFrame frame)
         {
             if (bone_map.animatorHumanBones.ContainsKey(bone))
             {
@@ -146,19 +155,19 @@ namespace Meocap.Perform
                 if(bone == HumanBodyBones.Hips)
                 {
                     transform.rotation = rotation;
+                    transform.position = new Vector3(this.baseHipsPos.x-(float)frame.translation[0], this.baseHipsPos.y+(float)frame.translation[1], this.baseHipsPos.z+(float)frame.translation[2]);
+
+
                 }else
                 {
                     transform.localRotation = rotation;
                 }
-
             }
-
         }
 
         public void Perform(UniversalFrame frame)
         {
             List<Matrix4x4> matrices = new List<Matrix4x4>();
-
             if (frame.optimized_pose.Count == 216)
             {
                 for (int i = 0; i < frame.optimized_pose.Count; i += 9)
@@ -178,11 +187,11 @@ namespace Meocap.Perform
                 var rot = Quaternion.LookRotation(matrix.GetColumn(2), matrix.GetColumn(1)).eulerAngles;
                 if (bone_map.characterTPose.ContainsKey(bone))
                 {
-                    PerformBone(bone, bone_map.characterTPose[bone] * Quaternion.Euler(rot.x,-rot.y,-rot.z));
+                    PerformBone(bone, bone_map.characterTPose[bone] * Quaternion.Euler(rot.x,-rot.y,-rot.z),frame);
                 }
                 else
                 {
-                    PerformBone(bone, Quaternion.Euler(rot.x, -rot.y, -rot.z));
+                    PerformBone(bone, Quaternion.Euler(rot.x, -rot.y, -rot.z),frame);
                 }
                 index++;
             } 
