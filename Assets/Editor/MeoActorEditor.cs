@@ -20,7 +20,6 @@ namespace Meocap.UI
         public override void OnInspectorGUI()
         {
             Perform.MeoActor actor = (Perform.MeoActor)target;
-            EditorGUILayout.HelpBox("设置姿态从T-POSE开始，先点击下面的按钮以测量基准偏移。", MessageType.Info);
             EditorGUILayout.BeginHorizontal();
             if (actor.animator != null)
             {
@@ -57,20 +56,6 @@ namespace Meocap.UI
                 EditorGUILayout.HelpBox("Animator要求拥有人形avatar!", MessageType.Error);
 
             }
-
-            if (GUILayout.Button("注册 T-POSE 动作"))
-            {
-                actor.CalculateTPose();
-                actor.bone_map.UpdateListsFromDictionaries();
-                serializedObject.ApplyModifiedProperties();
-                EditorUtility.SetDirty(actor.bone_map);
-                AssetDatabase.SaveAssets();
-
-            }
-
-            EditorGUILayout.HelpBox("在下面放置MeocapActor配置文件!", MessageType.Info);
-
-            EditorGUILayout.PropertyField(boneMapProperty);
 
             serializedObject.ApplyModifiedProperties();
         }

@@ -1,11 +1,5 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
-using Meocap;
-using static TMPro.SpriteAssetUtilities.TexturePacker_JsonArray;
-using Unity.VisualScripting;
 namespace Meocap.Perform
 {
     [System.Serializable]
@@ -58,7 +52,7 @@ namespace Meocap.Perform
 
         public Animator animator;
         public Transform target;
-        public MeocapActorBoneMap bone_map;
+        public Dictionary<HumanBodyBones,Transform> animatorBones = new Dictionary<HumanBodyBones, Transform>();
         public Vector3 baseHipsPos;
 
 
@@ -68,25 +62,9 @@ namespace Meocap.Perform
         /// </summary>
         private Transform GetBone(HumanBodyBones bone)
         {
-            return bone_map.animatorHumanBones[bone];
+            return animatorBones[bone];
         }
 
-        /// <summary>
-        /// Store Character's T Pose.
-        /// </summary>
-        protected void InitializeCharacterTPose()
-        {
-            bone_map.characterTPose.Clear();
-            foreach (HumanBodyBones bone in OrderedHumanBodyBones)
-            {
-                if (bone == HumanBodyBones.LastBone) break;
-                Transform boneTransform = GetBone(bone);
-
-                if (boneTransform == null) continue;
-
-                bone_map.characterTPose.Add(bone, boneTransform.rotation);
-            }
-        }
 
         /// <summary>
         /// Calculate Character's offset based on its T Pose and Newton's T Pose.
@@ -102,12 +80,12 @@ namespace Meocap.Perform
         protected void InitializeAnimatorHumanBones()
         {
             if (animator == null || !animator.isHuman) return;
-            bone_map.animatorHumanBones.Clear();
+            this.animatorBones.Clear();
 
             foreach (HumanBodyBones bone in OrderedHumanBodyBones)
             {
                 if (bone == HumanBodyBones.LastBone) break;
-                bone_map.animatorHumanBones.Add(bone, animator.GetBoneTransform(bone));
+                this.animatorBones.Add(bone, animator.GetBoneTransform(bone));
                 if(bone == HumanBodyBones.Hips)
                 {
                     var p = GetBone(bone).position;
@@ -117,26 +95,8 @@ namespace Meocap.Perform
 
         }
 
-        public void SaveBoneMapToAssets()
-        {
-            if (bone_map == null) return;
-            
-        }
-
-        [ContextMenu("CalcualteTPose")]
-        public void CalculateTPose()
-        {
-            InitializeAnimatorHumanBones();
-            InitializeCharacterTPose();
-            Debug.Log($"Found {bone_map.characterTPose.Count} bones to calculate T-Pose offsets");
-            Debug.Log($"Found available {bone_map.animatorHumanBones.Count} bones in the animator");
-        }
-
         void Start()
         {
-            bone_map.BuildDictionaries();
-            Debug.Log($"Start with {bone_map.characterTPose.Count} bones to calculate T-Pose offsets");
-            Debug.Log($"Start with available {bone_map.animatorHumanBones.Count} bones in the animator");
             InitializeAnimatorHumanBones();
         }
 
@@ -148,16 +108,14 @@ namespace Meocap.Perform
 
         public void PerformBone(HumanBodyBones bone,Quaternion rotation,UniversalFrame frame)
         {
-            if (bone_map.animatorHumanBones.ContainsKey(bone))
+            if (this.animatorBones.ContainsKey(bone))
             {
-                var transform = bone_map.animatorHumanBones[bone];
+                var transform = this.animatorBones[bone];
                 if (transform == null) return;
                 if(bone == HumanBodyBones.Hips)
                 {
                     transform.rotation = rotation;
                     transform.position = new Vector3(this.baseHipsPos.x-(float)frame.translation[0], this.baseHipsPos.y+(float)frame.translation[1], this.baseHipsPos.z+(float)frame.translation[2]);
-
-
                 }else
                 {
                     transform.localRotation = rotation;
@@ -185,14 +143,7 @@ namespace Meocap.Perform
             {
                 var bone = OrderedHumanBodyBones[index];
                 var rot = Quaternion.LookRotation(matrix.GetColumn(2), matrix.GetColumn(1)).eulerAngles;
-                if (bone_map.characterTPose.ContainsKey(bone))
-                {
-                    PerformBone(bone, bone_map.characterTPose[bone] * Quaternion.Euler(rot.x,-rot.y,-rot.z),frame);
-                }
-                else
-                {
-                    PerformBone(bone, Quaternion.Euler(rot.x, -rot.y, -rot.z),frame);
-                }
+                PerformBone(bone, Quaternion.Euler(rot.x, -rot.y, -rot.z),frame);
                 index++;
             } 
 

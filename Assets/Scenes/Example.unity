@@ -569,7 +569,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7672079934128895086, guid: 4e04d2e1a7f6a0146805168ebfbbb80f, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 1.4894338
+      value: 2.277
       objectReference: {fileID: 0}
     - target: {fileID: 7672079934128895086, guid: 4e04d2e1a7f6a0146805168ebfbbb80f, type: 3}
       propertyPath: m_LocalPosition.y
@@ -1501,6 +1501,7 @@ MonoBehaviour:
   animator: {fileID: 8785899967837750525}
   target: {fileID: 8785899967844920105}
   bone_map: {fileID: 11400000, guid: 66ddb5ed5cb9da542bc5d6a84f8c7277, type: 2}
+  baseHipsPos: {x: 0, y: 0, z: 0}
 --- !u!1 &8785899967845021517
 GameObject:
   m_ObjectHideFlags: 0
