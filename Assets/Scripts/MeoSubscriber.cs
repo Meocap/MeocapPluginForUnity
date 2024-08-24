@@ -4,6 +4,10 @@ using NetMQ.Sockets;
 using NetMQ;
 using UnityEngine;
 using Meocap;
+using System.Text;
+using System.Runtime.InteropServices;
+using System;
+
 namespace Meocap.DataSource
 {
     public class MeoSubscriber : MonoBehaviour
@@ -15,18 +19,21 @@ namespace Meocap.DataSource
         public string address = "127.0.0.1";
         [Header("发布端端口号")]
         public short port = 14999;
-        private SubscriberSocket subscriberSocket;
         [Header("当前帧ID")]
         public int frameId = 0;
+
+        Meocap.MeoFrame frame;
+        private ulong sock_ptr;
+
         void Start()
         {
             AsyncIO.ForceDotNet.Force();
-            subscriberSocket = new SubscriberSocket();
-            subscriberSocket.Options.ReceiveHighWatermark = 1000;
-            subscriberSocket.Connect($"tcp://{address}:{port}");
-            subscriberSocket.Subscribe("");
-            Debug.Log("订阅者已连接到 " + address);
-
+            string[] ip_addr = address.Split('.');
+            if(ip_addr.Length != 4 ) {
+                Debug.LogError("MeoSubscriber: IPAddress Format Error");
+                return;
+            }
+            this.sock_ptr = MeocapSDK.meocap_connect_server_char(byte.Parse(ip_addr[0]), byte.Parse(ip_addr[1]), byte.Parse(ip_addr[2]), byte.Parse(ip_addr[3]), (ushort)port);
             StartCoroutine(ReceiveData());
         }
 
@@ -34,23 +41,13 @@ namespace Meocap.DataSource
         {
             while (true)
             {
-                if (subscriberSocket.TryReceiveFrameString(out string message))
+                int ret = MeocapSDK.meocap_recv_frame(this.sock_ptr, out this.frame);
+                if (ret==0)
                 {
-                    try
+                    if(actor != null)
                     {
-                        Perform.UniversalFrame frameData = JsonUtility.FromJson<Perform.UniversalFrame>(message);
-                        frameId = frameData.frame_id;
-                        if (actor != null)
-                        {
-                            actor.Perform(frameData);
-                        }
+                        actor.Perform(this.frame);
                     }
-                    catch
-                    {
-
-                    }
-
-
                 }
                 yield return null; // 确保Unity不会冻结
             }
@@ -58,9 +55,10 @@ namespace Meocap.DataSource
 
         private void OnDestroy()
         {
-            subscriberSocket.Close();
-            subscriberSocket.Dispose();
-            NetMQConfig.Cleanup();
+            if(this.sock_ptr != 0)
+            {
+                MeocapSDK.meocap_clean_up(this.sock_ptr);
+            }
         }
     }
 

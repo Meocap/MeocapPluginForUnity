@@ -2,21 +2,6 @@ using System.Collections.Generic;
 using UnityEngine;
 namespace Meocap.Perform
 {
-    [System.Serializable]
-    public class UniversalFrame
-    {
-        public int frame_id;
-        public List<double> optimized_pose;
-        public List<double> translation;
-    }
-
-    [System.Serializable]
-    public class PlainTrackerReport
-    {
-        public float[] rotation;
-        public ulong timestamp;
-        public float[] acc;
-    }
     public class MeoActor : MonoBehaviour
     {
         // Start is called before the first frame update
@@ -106,7 +91,7 @@ namespace Meocap.Perform
 
         }
 
-        public void PerformBone(HumanBodyBones bone,Quaternion rotation,UniversalFrame frame)
+        public void PerformBone(HumanBodyBones bone,Quaternion rotation,MeoFrame frame)
         {
             if (this.animatorBones.ContainsKey(bone))
             {
@@ -115,7 +100,7 @@ namespace Meocap.Perform
                 if(bone == HumanBodyBones.Hips)
                 {
                     transform.rotation = rotation;
-                    transform.position = new Vector3(this.baseHipsPos.x-(float)frame.translation[0], this.baseHipsPos.y+(float)frame.translation[1], this.baseHipsPos.z+(float)frame.translation[2]);
+                    transform.position = new Vector3(this.baseHipsPos.x-(float)frame.translation0, this.baseHipsPos.y+(float)frame.translation1, this.baseHipsPos.z+(float)frame.translation2);
                 }else
                 {
                     transform.localRotation = rotation;
@@ -123,17 +108,25 @@ namespace Meocap.Perform
             }
         }
 
-        public void Perform(UniversalFrame frame)
+        public void Perform(MeoFrame frame)
         {
             List<Matrix4x4> matrices = new List<Matrix4x4>();
-            if (frame.optimized_pose.Count == 216)
+            Joint[] joints = { 
+                frame.joints0,frame.joints1,frame.joints2,frame.joints3,frame.joints4,
+                frame.joints5,frame.joints6,frame.joints7,frame.joints8,frame.joints9,
+                frame.joints10,frame.joints11,frame.joints12,frame.joints13,frame.joints14,
+                frame.joints15,frame.joints16,frame.joints17,frame.joints18,frame.joints19,
+                frame.joints20,frame.joints21,frame.joints22,frame.joints23
+            };
+
+            if (joints.Length == 24)
             {
-                for (int i = 0; i < frame.optimized_pose.Count; i += 9)
+                foreach (var item in joints)
                 {
                     Matrix4x4 matrix = new Matrix4x4();
-                    matrix.SetColumn(0, new Vector4((float)frame.optimized_pose[i], (float)frame.optimized_pose[i + 1], (float)frame.optimized_pose[i + 2], 0));
-                    matrix.SetColumn(1, new Vector4((float)frame.optimized_pose[i + 3], (float)frame.optimized_pose[i + 4], (float)frame.optimized_pose[i + 5], 0));
-                    matrix.SetColumn(2, new Vector4((float)frame.optimized_pose[i + 6], (float)frame.optimized_pose[i + 7], (float)frame.optimized_pose[i + 8], 0));
+                    matrix.SetColumn(0, new Vector4((float)item.rotation0, (float)item.rotation1, (float)item.rotation2, 0));
+                    matrix.SetColumn(1, new Vector4((float)item.rotation3, (float)item.rotation4, (float)item.rotation5, 0));
+                    matrix.SetColumn(2, new Vector4((float)item.rotation6, (float)item.rotation7, (float)item.rotation8, 0));
                     matrices.Add(matrix);
                 }
             }
