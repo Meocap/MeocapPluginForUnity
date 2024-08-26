@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 namespace Meocap.Perform
 {
@@ -39,6 +40,8 @@ namespace Meocap.Perform
         public Transform target;
         public Dictionary<HumanBodyBones,Transform> animatorBones = new Dictionary<HumanBodyBones, Transform>();
         public Vector3 baseHipsPos;
+        private List<Quaternion> tPoseOffsets = new List<Quaternion>();
+        private bool inited = false;
 
 
 
@@ -56,7 +59,22 @@ namespace Meocap.Perform
         /// </summary>
         protected void InitializeBoneOffsets()
         {
+            if (animator == null || !animator.isHuman) return;
 
+            foreach (HumanBodyBones bone in OrderedHumanBodyBones)
+            {
+                if (bone == HumanBodyBones.LastBone) break;
+                var bone_t = animator.GetBoneTransform(bone);
+                if (bone_t != null)
+                {
+                    var bone_rot = bone_t.rotation;
+                    this.tPoseOffsets.Add(new Quaternion(bone_rot.x,bone_rot.y,bone_rot.z,bone_rot.w));
+                }
+                else
+                {
+                    this.tPoseOffsets.Add(new Quaternion(0,0,0,1));
+                }
+            }
         }
 
         /// <summary>
@@ -75,6 +93,7 @@ namespace Meocap.Perform
                 {
                     var p = GetBone(bone).position;
                     this.baseHipsPos = new Vector3(p.x,p.y,p.z);
+                    
                 }
             }
 
@@ -83,6 +102,9 @@ namespace Meocap.Perform
         void Start()
         {
             InitializeAnimatorHumanBones();
+            InitializeBoneOffsets();
+            Debug.Log(tPoseOffsets.Count);
+            this.inited = true;
         }
 
         // Update is called once per frame
@@ -99,17 +121,15 @@ namespace Meocap.Perform
                 if (transform == null) return;
                 if(bone == HumanBodyBones.Hips)
                 {
-                    transform.rotation = rotation;
-                    transform.position = new Vector3(this.baseHipsPos.x-(float)frame.translation0, this.baseHipsPos.y+(float)frame.translation1, this.baseHipsPos.z+(float)frame.translation2);
-                }else
-                {
-                    transform.localRotation = rotation;
+                    transform.position = new Vector3(this.baseHipsPos.x-(float)frame.translation0 * this.transform.localScale.x, this.baseHipsPos.y+(float)frame.translation1 * this.transform.localScale.y, this.baseHipsPos.z+(float)frame.translation2*this.transform.localScale.z);
                 }
+                transform.rotation = rotation;
             }
         }
 
         public void Perform(MeoFrame frame)
         {
+            if (!this.inited) return;
             List<Matrix4x4> matrices = new List<Matrix4x4>();
             Joint[] joints = { 
                 frame.joints0,frame.joints1,frame.joints2,frame.joints3,frame.joints4,
@@ -134,12 +154,15 @@ namespace Meocap.Perform
             int index = 0;
             foreach(var matrix in matrices)
             {
+                var offset = this.tPoseOffsets[index];
                 var bone = OrderedHumanBodyBones[index];
                 var rot = Quaternion.LookRotation(matrix.GetColumn(2), matrix.GetColumn(1)).eulerAngles;
-                PerformBone(bone, Quaternion.Euler(rot.x, -rot.y, -rot.z),frame);
-                index++;
-            } 
+                // Quaternion.Euler(rot.x, -rot.y, -rot.z)
+                var bone_tf = this.animator.GetBoneTransform(bone);
+                this.PerformBone(bone, Quaternion.Euler(rot.x, -rot.y, -rot.z) * offset,frame);
 
+                index++;
+            }
 
         }
     }

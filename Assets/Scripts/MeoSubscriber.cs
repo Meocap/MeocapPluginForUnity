@@ -34,22 +34,19 @@ namespace Meocap.DataSource
                 return;
             }
             this.sock_ptr = MeocapSDK.meocap_connect_server_char(byte.Parse(ip_addr[0]), byte.Parse(ip_addr[1]), byte.Parse(ip_addr[2]), byte.Parse(ip_addr[3]), (ushort)port);
-            StartCoroutine(ReceiveData());
+            //StartCoroutine(ReceiveData());
         }
 
-        private IEnumerator ReceiveData()
+        private void Update()
         {
-            while (true)
+            int ret = MeocapSDK.meocap_recv_frame(this.sock_ptr, out this.frame);
+            if (ret == 0)
             {
-                int ret = MeocapSDK.meocap_recv_frame(this.sock_ptr, out this.frame);
-                if (ret==0)
+                if (actor != null)
                 {
-                    if(actor != null)
-                    {
-                        actor.Perform(this.frame);
-                    }
+                    actor.Perform(this.frame);
                 }
-                yield return null; // 确保Unity不会冻结
+                this.frameId = this.frame.frame_id;
             }
         }
 
