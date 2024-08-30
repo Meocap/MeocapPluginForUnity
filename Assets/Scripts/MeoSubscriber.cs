@@ -10,6 +10,8 @@ using System;
 
 namespace Meocap.DataSource
 {
+    
+  
     public class MeoSubscriber : MonoBehaviour
     {
         // Start is called before the first frame update
@@ -21,9 +23,16 @@ namespace Meocap.DataSource
         public short port = 14999;
         [Header("当前帧ID")]
         public int frameId = 0;
-
+        [Header("将Actor骨架同步至客户端")]
+        public bool syncBonePos = false;
+        [Header("Command Server IP地址")]
+        public string command_address = "127.0.0.1";
+        [Header("Command Servr 端口号")]
+        public short command_port = 15999;
         Meocap.MeoFrame frame;
         private ulong sock_ptr;
+        private ulong sock_command_ptr;
+        
 
         void Start()
         {
@@ -34,7 +43,19 @@ namespace Meocap.DataSource
                 return;
             }
             this.sock_ptr = MeocapSDK.meocap_connect_server_char(byte.Parse(ip_addr[0]), byte.Parse(ip_addr[1]), byte.Parse(ip_addr[2]), byte.Parse(ip_addr[3]), (ushort)port);
-            //StartCoroutine(ReceiveData());
+            if(this.syncBonePos)
+            {
+                string[] ip_command_addr = command_address.Split(".");
+                this.sock_command_ptr = MeocapSDK.meocap_connect_command_server_char(byte.Parse(ip_command_addr[0]), byte.Parse(ip_command_addr[1]), byte.Parse(ip_command_addr[2]), byte.Parse(ip_command_addr[3]), (ushort)command_port);
+                Debug.Log(this.sock_command_ptr);
+                if (this.actor && this.sock_command_ptr != 0)
+                {
+                    var frame = this.actor.SyncBonePosToClient();
+                    var ret = MeocapSDK.meocap_command_set_skel(this.sock_command_ptr, ref frame);
+                    Debug.Log(ret);
+
+                }
+            }
         }
 
         private void Update()

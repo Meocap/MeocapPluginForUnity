@@ -25,6 +25,15 @@ namespace Meocap
         [DllImport(NativeLib, CallingConvention = CallingConvention.Cdecl, EntryPoint = "meocap_connect_server_cstr")]
         public static extern ulong meocap_connect_server_cstr(ref sbyte endpoint);
 
+        [DllImport(NativeLib, CallingConvention = CallingConvention.Cdecl, EntryPoint = "meocap_connect_command_server_char")]
+        public static extern ulong meocap_connect_command_server_char(byte ip_a, byte ip_b, byte ip_c, byte ip_d, ushort port);
+
+        [DllImport(NativeLib, CallingConvention = CallingConvention.Cdecl, EntryPoint = "meocap_connect_command_server_cstr")]
+        public static extern ulong meocap_connect_command_server_cstr(ref sbyte endpoint);
+
+        [DllImport(NativeLib, CallingConvention = CallingConvention.Cdecl, EntryPoint = "meocap_command_set_skel")]
+        public static extern int meocap_command_set_skel(ulong socket, ref SkelBase skel);
+
         [DllImport(NativeLib, CallingConvention = CallingConvention.Cdecl, EntryPoint = "meocap_recv_frame")]
         public static extern int meocap_recv_frame(ulong socket, out MeoFrame frame_buf);
 
@@ -40,15 +49,14 @@ namespace Meocap
         public double pos0;
         public double pos1;
         public double pos2;
-        public double rotation0;
-        public double rotation1;
-        public double rotation2;
-        public double rotation3;
-        public double rotation4;
-        public double rotation5;
-        public double rotation6;
-        public double rotation7;
-        public double rotation8;
+        public double glb_rot0;
+        public double glb_rot1;
+        public double glb_rot2;
+        public double glb_rot3;
+        public double loc_rot0;
+        public double loc_rot1;
+        public double loc_rot2;
+        public double loc_rot3;
     }
 
     [Serializable]
@@ -85,13 +93,53 @@ namespace Meocap
         public Joint joints23;
     }
 
+    [Serializable]
+    [StructLayout(LayoutKind.Sequential)]
+    public partial struct SkelBase
+    {
+        public SkelJoint bones0;
+        public SkelJoint bones1;
+        public SkelJoint bones2;
+        public SkelJoint bones3;
+        public SkelJoint bones4;
+        public SkelJoint bones5;
+        public SkelJoint bones6;
+        public SkelJoint bones7;
+        public SkelJoint bones8;
+        public SkelJoint bones9;
+        public SkelJoint bones10;
+        public SkelJoint bones11;
+        public SkelJoint bones12;
+        public SkelJoint bones13;
+        public SkelJoint bones14;
+        public SkelJoint bones15;
+        public SkelJoint bones16;
+        public SkelJoint bones17;
+        public SkelJoint bones18;
+        public SkelJoint bones19;
+        public SkelJoint bones20;
+        public SkelJoint bones21;
+        public SkelJoint bones22;
+        public SkelJoint bones23;
+        public double floor_y;
+    }
+
+    [Serializable]
+    [StructLayout(LayoutKind.Sequential)]
+    public partial struct SkelJoint
+    {
+        public double pos0;
+        public double pos1;
+        public double pos2;
+    }
+
 
 
     public class InteropException<T> : Exception
     {
         public T Error { get; private set; }
 
-        public InteropException(T error) : base($"Something went wrong: {error}")
+        public InteropException(T error): base($"Something went wrong: {error}")
         {
             Error = error;
         }

@@ -42,6 +42,7 @@ namespace Meocap.Perform
         public Vector3 baseHipsPos;
         private List<Quaternion> tPoseOffsets = new List<Quaternion>();
         private bool inited = false;
+        public static readonly int[] BONE_PARA = { -1, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 9, 12, 13, 14, 16, 17, 18, 19, 20, 21 };
 
 
 
@@ -103,8 +104,69 @@ namespace Meocap.Perform
         {
             InitializeAnimatorHumanBones();
             InitializeBoneOffsets();
-            Debug.Log(tPoseOffsets.Count);
             this.inited = true;
+        }
+
+        public SkelBase SyncBonePosToClient()
+        {
+            List<Vector3> vecs = new List<Vector3>();
+            var index = 0;
+            foreach (var bone in OrderedHumanBodyBones)
+            {
+                var transform = this.animator.GetBoneTransform(bone);
+                if (transform != null)
+                {
+                    vecs.Add(transform.localPosition);
+                }
+                else
+                {
+                    vecs.Add(new Vector3(0,0,0));
+                }
+                index++;
+            }
+
+            List<SkelJoint> joints = new List<SkelJoint>();
+            
+            index = 0;
+            foreach (var vec in vecs)
+            {
+                if (index == 0)
+                {
+                    joints.Add(new SkelJoint { pos0 = vecs[0].x, pos1 = vecs[0].y, pos2 = vecs[0].z });
+                }
+                else
+                {
+                    var p = joints[BONE_PARA[index]];
+                    joints.Add(new SkelJoint { 
+                        pos0 = vecs[index].x + p.pos0,
+                        pos1 = vecs[index].y + p.pos1,
+                        pos2 = vecs[index].z + p.pos2
+                    });
+
+                }
+                index++;
+            }
+
+
+
+            SkelBase ret = new SkelBase { 
+                bones0 = joints[0], bones1 = joints[1],bones2 = joints[2],
+                bones3 = joints[3], bones4 = joints[4],bones5 = joints[5],
+                bones6 = joints[6], bones7 = joints[7],bones8 = joints[8],
+                bones9 = joints[9], bones10 = joints[10],
+                bones11 = joints[11], bones12 = joints[12],
+                bones13 = joints[13], bones14 = joints[14],
+                bones15 = joints[15], bones16 = joints[16],
+                bones17 = joints[17], bones18 = joints[18],
+                bones19 = joints[19], bones20 = joints[20],
+                bones21 = joints[21], bones22 = joints[22],
+                bones23 = joints[23],
+                floor_y = joints[10].pos1 - joints[0].pos1
+            };
+
+
+            return ret;
+
         }
 
         // Update is called once per frame
@@ -130,7 +192,7 @@ namespace Meocap.Perform
         public void Perform(MeoFrame frame)
         {
             if (!this.inited) return;
-            List<Matrix4x4> matrices = new List<Matrix4x4>();
+            List<Quaternion> quats = new List<Quaternion>();
             Joint[] joints = { 
                 frame.joints0,frame.joints1,frame.joints2,frame.joints3,frame.joints4,
                 frame.joints5,frame.joints6,frame.joints7,frame.joints8,frame.joints9,
@@ -143,20 +205,16 @@ namespace Meocap.Perform
             {
                 foreach (var item in joints)
                 {
-                    Matrix4x4 matrix = new Matrix4x4();
-                    matrix.SetColumn(0, new Vector4((float)item.rotation0, (float)item.rotation1, (float)item.rotation2, 0));
-                    matrix.SetColumn(1, new Vector4((float)item.rotation3, (float)item.rotation4, (float)item.rotation5, 0));
-                    matrix.SetColumn(2, new Vector4((float)item.rotation6, (float)item.rotation7, (float)item.rotation8, 0));
-                    matrices.Add(matrix);
+                    quats.Add(new Quaternion((float)item.glb_rot0, (float)item.glb_rot1, (float)item.glb_rot2, (float)item.glb_rot3));
                 }
             }
 
             int index = 0;
-            foreach(var matrix in matrices)
+            foreach(var quat in quats)
             {
                 var offset = this.tPoseOffsets[index];
                 var bone = OrderedHumanBodyBones[index];
-                var rot = Quaternion.LookRotation(matrix.GetColumn(2), matrix.GetColumn(1)).eulerAngles;
+                var rot = quat.eulerAngles;
                 // Quaternion.Euler(rot.x, -rot.y, -rot.z)
                 var bone_tf = this.animator.GetBoneTransform(bone);
                 this.PerformBone(bone, Quaternion.Euler(rot.x, -rot.y, -rot.z) * offset,frame);
