@@ -26,9 +26,9 @@ namespace Meocap.DataSource
         [Header("将Actor骨架同步至客户端")]
         public bool syncBonePos = false;
         [Header("Command Server IP地址")]
-        public string command_address = "127.0.0.1";
+        public string commandAddress = "127.0.0.1";
         [Header("Command Servr 端口号")]
-        public short command_port = 15999;
+        public short commandPort = 15999;
         Meocap.MeoFrame frame;
         private ulong sock_ptr;
         private ulong sock_command_ptr;
@@ -45,8 +45,8 @@ namespace Meocap.DataSource
             this.sock_ptr = MeocapSDK.meocap_connect_server_char(byte.Parse(ip_addr[0]), byte.Parse(ip_addr[1]), byte.Parse(ip_addr[2]), byte.Parse(ip_addr[3]), (ushort)port);
             if(this.syncBonePos)
             {
-                string[] ip_command_addr = command_address.Split(".");
-                this.sock_command_ptr = MeocapSDK.meocap_connect_command_server_char(byte.Parse(ip_command_addr[0]), byte.Parse(ip_command_addr[1]), byte.Parse(ip_command_addr[2]), byte.Parse(ip_command_addr[3]), (ushort)command_port);
+                string[] ip_command_addr = commandAddress.Split(".");
+                this.sock_command_ptr = MeocapSDK.meocap_connect_command_server_char(byte.Parse(ip_command_addr[0]), byte.Parse(ip_command_addr[1]), byte.Parse(ip_command_addr[2]), byte.Parse(ip_command_addr[3]), (ushort)commandPort);
                 Debug.Log(this.sock_command_ptr);
                 if (this.actor && this.sock_command_ptr != 0)
                 {
