@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using NetMQ.Sockets;
 using NetMQ;
 using UnityEngine;
-using Meocap;
 using System.Text;
 using System.Runtime.InteropServices;
 using System;
+using System.Collections.Concurrent;
+using System.Threading;
 
 namespace Meocap.DataSource
 {
@@ -29,11 +30,16 @@ namespace Meocap.DataSource
         public string commandAddress = "127.0.0.1";
         [Header("Command Servr ¶Ë¿ÚºÅ")]
         public short commandPort = 15999;
-        Meocap.MeoFrame frame;
-        private ulong sock_ptr;
-        private ulong sock_command_ptr;
-        
 
+
+        MeocapSdk.MeoFrame frame;
+        private IntPtr sock_ptr = IntPtr.Zero;
+        private volatile bool has_sync_skel = false;
+
+        private ConcurrentQueue<MeocapSdk.MeoFrame> frames = new ();
+
+        private bool running_recv_msg = true;
+        private Thread messageThread;
         void Start()
         {
             AsyncIO.ForceDotNet.Force();
@@ -42,40 +48,77 @@ namespace Meocap.DataSource
                 Debug.LogError("MeoSubscriber: IPAddress Format Error");
                 return;
             }
-            this.sock_ptr = MeocapSDK.meocap_connect_server_char(byte.Parse(ip_addr[0]), byte.Parse(ip_addr[1]), byte.Parse(ip_addr[2]), byte.Parse(ip_addr[3]), (ushort)port);
-            if(this.syncBonePos)
-            {
-                string[] ip_command_addr = commandAddress.Split(".");
-                this.sock_command_ptr = MeocapSDK.meocap_connect_command_server_char(byte.Parse(ip_command_addr[0]), byte.Parse(ip_command_addr[1]), byte.Parse(ip_command_addr[2]), byte.Parse(ip_command_addr[3]), (ushort)commandPort);
-                Debug.Log(this.sock_command_ptr);
-                if (this.actor && this.sock_command_ptr != 0)
-                {
-                    var frame = this.actor.SyncBonePosToClient();
-                    var ret = MeocapSDK.meocap_command_set_skel(this.sock_command_ptr, ref frame);
-                    Debug.Log(ret);
+            MeocapSdk.Addr addr = new() { 
+                a = byte.Parse(ip_addr[0]),
+                b = byte.Parse(ip_addr[1]),
+                c = byte.Parse(ip_addr[2]),
+                d = byte.Parse(ip_addr[3]),
+                port = (ushort)port
+            };
 
+            var ret = MeocapSdk.Api.meocap_bind_listening_addr(ref addr);
+            
+            if(ret.err.ty == MeocapSdk.ErrorType.None)
+            {
+                this.sock_ptr = ret.socket;
+                messageThread = new Thread(ReceiveMessages);
+                messageThread.Start();
+            }
+
+
+
+        }
+
+        private void ReceiveMessages()
+        {
+            while (running_recv_msg)
+            {
+                var frame = new MeocapSdk.MeoFrame();
+                var ret = MeocapSdk.Api.meocap_recv_frame(this.sock_ptr, ref frame);
+                if (ret.ty == MeocapSdk.ErrorType.None)
+                {
+                    frames.Enqueue(frame);
                 }
+                Thread.Sleep(10);
             }
         }
 
+
+
         private void Update()
         {
-            int ret = MeocapSDK.meocap_recv_frame(this.sock_ptr, out this.frame);
-            if (ret == 0)
+            bool has_new_data = false;
+            while (frames.TryDequeue(out MeocapSdk.MeoFrame new_frame))
             {
-                if (actor != null)
-                {
-                    actor.Perform(this.frame);
-                }
-                this.frameId = this.frame.frame_id;
+                frame = new_frame;
+                this.frameId = frame.frame_id;
+                has_new_data = true;
             }
+            if(has_new_data)
+            {
+                if (this.syncBonePos && !this.has_sync_skel)
+                {
+                    if (this.actor && this.sock_ptr != IntPtr.Zero)
+                    {
+                        var skel = this.actor.SyncBonePosToClient();
+                        var ret_command = MeocapSdk.Api.meocap_command_set_skel(this.sock_ptr, ref frame.src, ref skel);
+                        this.has_sync_skel = true;
+                    }
+                }
+                if (this.actor != null)
+                {
+                    this.actor.Perform(frame);
+                }
+            }
+
         }
 
         private void OnDestroy()
         {
-            if(this.sock_ptr != 0)
+            running_recv_msg = false;
+            if(this.sock_ptr != IntPtr.Zero)
             {
-                MeocapSDK.meocap_clean_up(this.sock_ptr);
+                MeocapSdk.Api.meocap_clean_up(this.sock_ptr);
             }
         }
     }

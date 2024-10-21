@@ -8,131 +8,97 @@ using System.Runtime.InteropServices;
 using Meocap;
 #pragma warning restore 0105
 
-namespace Meocap
+namespace MeocapSdk
 {
-    public static partial class MeocapSDK
+    public enum ErrorType
     {
-        public const string NativeLib = "meocap_sdk";
-
-        static MeocapSDK()
-        {
-        }
-
-
-        [DllImport(NativeLib, CallingConvention = CallingConvention.Cdecl, EntryPoint = "meocap_connect_server_char")]
-        public static extern ulong meocap_connect_server_char(byte ip_a, byte ip_b, byte ip_c, byte ip_d, ushort port);
-
-        [DllImport(NativeLib, CallingConvention = CallingConvention.Cdecl, EntryPoint = "meocap_connect_server_cstr")]
-        public static extern ulong meocap_connect_server_cstr(ref sbyte endpoint);
-
-        [DllImport(NativeLib, CallingConvention = CallingConvention.Cdecl, EntryPoint = "meocap_connect_command_server_char")]
-        public static extern ulong meocap_connect_command_server_char(byte ip_a, byte ip_b, byte ip_c, byte ip_d, ushort port);
-
-        [DllImport(NativeLib, CallingConvention = CallingConvention.Cdecl, EntryPoint = "meocap_connect_command_server_cstr")]
-        public static extern ulong meocap_connect_command_server_cstr(ref sbyte endpoint);
-
-        [DllImport(NativeLib, CallingConvention = CallingConvention.Cdecl, EntryPoint = "meocap_command_set_skel")]
-        public static extern int meocap_command_set_skel(ulong socket, ref SkelBase skel);
-
-        [DllImport(NativeLib, CallingConvention = CallingConvention.Cdecl, EntryPoint = "meocap_recv_frame")]
-        public static extern int meocap_recv_frame(ulong socket, out MeoFrame frame_buf);
-
-        [DllImport(NativeLib, CallingConvention = CallingConvention.Cdecl, EntryPoint = "meocap_clean_up")]
-        public static extern int meocap_clean_up(ulong socket);
-
+        None = 0,
+        Socket = 1,
+        InvalidParameter = 2,
+        DataCorrupted = 3,
     }
 
-    [Serializable]
     [StructLayout(LayoutKind.Sequential)]
-    public partial struct Joint
+    public struct Status
     {
-        public double pos0;
-        public double pos1;
-        public double pos2;
-        public double glb_rot0;
-        public double glb_rot1;
-        public double glb_rot2;
-        public double glb_rot3;
-        public double loc_rot0;
-        public double loc_rot1;
-        public double loc_rot2;
-        public double loc_rot3;
+        public ErrorType ty;
+        public ulong info;
     }
 
-    [Serializable]
     [StructLayout(LayoutKind.Sequential)]
-    public partial struct MeoFrame
+    public struct SkelJoint
     {
-        public int frame_id;
-        public double translation0;
-        public double translation1;
-        public double translation2;
-        public Joint joints0;
-        public Joint joints1;
-        public Joint joints2;
-        public Joint joints3;
-        public Joint joints4;
-        public Joint joints5;
-        public Joint joints6;
-        public Joint joints7;
-        public Joint joints8;
-        public Joint joints9;
-        public Joint joints10;
-        public Joint joints11;
-        public Joint joints12;
-        public Joint joints13;
-        public Joint joints14;
-        public Joint joints15;
-        public Joint joints16;
-        public Joint joints17;
-        public Joint joints18;
-        public Joint joints19;
-        public Joint joints20;
-        public Joint joints21;
-        public Joint joints22;
-        public Joint joints23;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 3)]
+        public double[] pos; // Array of 3 doubles for position
     }
 
-    [Serializable]
     [StructLayout(LayoutKind.Sequential)]
-    public partial struct SkelBase
+    public struct SkelBase
     {
-        public SkelJoint bones0;
-        public SkelJoint bones1;
-        public SkelJoint bones2;
-        public SkelJoint bones3;
-        public SkelJoint bones4;
-        public SkelJoint bones5;
-        public SkelJoint bones6;
-        public SkelJoint bones7;
-        public SkelJoint bones8;
-        public SkelJoint bones9;
-        public SkelJoint bones10;
-        public SkelJoint bones11;
-        public SkelJoint bones12;
-        public SkelJoint bones13;
-        public SkelJoint bones14;
-        public SkelJoint bones15;
-        public SkelJoint bones16;
-        public SkelJoint bones17;
-        public SkelJoint bones18;
-        public SkelJoint bones19;
-        public SkelJoint bones20;
-        public SkelJoint bones21;
-        public SkelJoint bones22;
-        public SkelJoint bones23;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 24)]
+        public SkelJoint[] bones; // Array of 24 SkelJoint
         public double floor_y;
     }
 
-    [Serializable]
-    [StructLayout(LayoutKind.Sequential)]
-    public partial struct SkelJoint
+    public class CSocket
     {
-        public double pos0;
-        public double pos1;
-        public double pos2;
+        // Placeholder for CSocket structure, you can add fields if necessary
     }
 
+    [StructLayout(LayoutKind.Sequential)]
+    public struct ConnectServerRet
+    {
+        public Status err;
+        public IntPtr socket; // Pointer to CSocket
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct Joint
+    {
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 3)]
+        public double[] pos; // Array of 3 doubles for position
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
+        public double[] glb_rot; // Array of 4 doubles for global rotation
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
+        public double[] loc_rot; // Array of 4 doubles for local rotation
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct Addr
+    {
+        public byte a;
+        public byte b;
+        public byte c;
+        public byte d;
+        public ushort port;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct MeoFrame
+    {
+        public int frame_id;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 3)]
+        public double[] translation; // Array of 3 doubles for translation
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 24)]
+        public Joint[] joints; // Array of 24 joints
+        public Addr src;
+    }
+
+    public static class Api
+    {
+        public const string NativeLib = "meocap_sdk";
+        [DllImport(NativeLib, CallingConvention = CallingConvention.Cdecl)]
+        public static extern Status meocap_command_set_skel(IntPtr socket, ref Addr addr, ref SkelBase skel);
+
+        [DllImport(NativeLib, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ConnectServerRet meocap_bind_listening_addr(ref Addr addr);
+
+        [DllImport(NativeLib, CallingConvention = CallingConvention.Cdecl)]
+        public static extern Status meocap_recv_frame(IntPtr socket, ref MeoFrame frame_buf);
+
+        [DllImport(NativeLib, CallingConvention = CallingConvention.Cdecl)]
+        public static extern Status meocap_clean_up(IntPtr socket);
+    }
 
 
     public class InteropException<T> : Exception
