@@ -1,6 +1,10 @@
 name: Create Unity Package
 
-on: push
+on: 
+  push:
+    tags:
+      - "*"
+  workflow_dispatch:
 
 jobs:
   packaging:
