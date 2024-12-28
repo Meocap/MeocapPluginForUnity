@@ -38,7 +38,12 @@ jobs:
           latest_tag=$(git describe --tags)
           echo "latest_tag=$(git describe --tags)" >> "$GITHUB_ENV"
           
-
+    - name: Read version from latest.json
+      id: read_version
+      run: |
+        VERSION=$(jq -r '.version' ./latest.json)
+        echo "VERSION=$VERSION" >> $GITHUB_ENV
+      
     - name: Create Release
       id: create_release
       uses: actions/create-release@v1
