@@ -55,3 +55,27 @@ jobs:
         asset_path: package.zip
         asset_name: package.zip
         asset_content_type: application/octet-stream
+
+    - name: Install ossutil2
+      run: |
+        wget https://gosspublic.alicdn.com/ossutil/1.7.6/ossutil64 -O ossutil
+        chmod +x ossutil
+        sudo mv ossutil /usr/local/bin
+
+
+    - name: Upload files to Alibaba Cloud OSS
+      env:
+        ALIYUN_ACCESS_KEY_ID: ${{ secrets.ALIYUN_PLUGIN_ACCESS_KEY_ID }}
+        ALIYUN_ACCESS_KEY_SECRET: ${{ secrets.ALIYUN_PLUGIN_ACCESS_KEY_SECRET }}
+        ALIYUN_BUCKET: ${{ secrets.ALIYUN_PLUGIN_BUCKET }}
+        ALIYUN_OSS_ENDPOINT: ${{ secrets.ALIYUN_PLUGIN_OSS_ENDPOINT }}
+      run: |
+        cp output/output.unitypackage "MeocapPluginForUnity-${{ env.VERSION }}.unitypackage"
+        # Configure ossutil2
+        ossutil config -i $ALIYUN_ACCESS_KEY_ID -k $ALIYUN_ACCESS_KEY_SECRET -e $ALIYUN_OSS_ENDPOINT
+
+        # Upload files to OSS
+        ossutil cp "MeocapPluginForUnity-${{ env.VERSION }}.unitypackage" oss://$ALIYUN_BUCKET/plugins/unity/ --endpoint $ALIYUN_OSS_ENDPOINT
+        ossutil cp "latest.json" oss://$ALIYUN_BUCKET/plugins/unity/ --endpoint $ALIYUN_OSS_ENDPOINT
+
+
