@@ -41,7 +41,7 @@ jobs:
     - name: Read version from latest.json
       id: read_version
       run: |
-        VERSION=$(jq -r '.version' ./latest.json)
+        VERSION=$(jq -r '.version' ./docs/latest.json)
         echo "VERSION=$VERSION" >> $GITHUB_ENV
       
     - name: Create Release
