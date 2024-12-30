@@ -85,6 +85,6 @@ jobs:
 
         # Upload files to OSS
         ossutil cp -f -u "MeocapPluginForUnity-${{ env.VERSION }}.unitypackage" oss://$ALIYUN_BUCKET/plugins/unity/ --endpoint $ALIYUN_OSS_ENDPOINT
-        ossutil cp -f -u "latest.json" oss://$ALIYUN_BUCKET/plugins/unity/ --endpoint $ALIYUN_OSS_ENDPOINT
+        ossutil cp -f -u -r ./docs/ oss://$ALIYUN_BUCKET/plugins/unity/docs --endpoint $ALIYUN_OSS_ENDPOINT
 
 
