@@ -1,10 +1,4 @@
-using System.Collections;
-using System.Collections.Generic;
-using NetMQ.Sockets;
-using NetMQ;
 using UnityEngine;
-using System.Text;
-using System.Runtime.InteropServices;
 using System;
 using System.Collections.Concurrent;
 using System.Threading;
@@ -42,7 +36,6 @@ namespace Meocap.DataSource
         private Thread messageThread;
         void Start()
         {
-            AsyncIO.ForceDotNet.Force();
             string[] ip_addr = address.Split('.');
             if(ip_addr.Length != 4 ) {
                 Debug.LogError("MeoSubscriber: IPAddress Format Error");
