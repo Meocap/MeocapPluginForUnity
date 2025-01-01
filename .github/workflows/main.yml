@@ -31,39 +31,12 @@ jobs:
     - name: Create ZIP Archive
       run: zip -r package.zip output
         
-    - name: Get tag name from git describe
-      id: get_tag_name
-      run: |
-          git fetch --tags --force
-          latest_tag=$(git describe --tags)
-          echo "latest_tag=$(git describe --tags)" >> "$GITHUB_ENV"
           
     - name: Read version from latest.json
       id: read_version
       run: |
         VERSION=$(jq -r '.version' ./docs/latest.json)
         echo "VERSION=$VERSION" >> $GITHUB_ENV
-      
-    - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ env.latest_tag }}
-        release_name: MP4U ${{ env.latest_tag }} Release
-        draft: false
-        prerelease: false
-      
-    - name: Upload Github Release
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: package.zip
-        asset_name: package.zip
-        asset_content_type: application/octet-stream
 
     - name: Install ossutil2
       run: |
