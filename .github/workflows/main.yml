@@ -31,12 +31,32 @@ jobs:
     - name: Create ZIP Archive
       run: zip -r package.zip output
         
-          
     - name: Read version from latest.json
       id: read_version
       run: |
         VERSION=$(jq -r '.version' ./docs/latest.json)
         echo "VERSION=$VERSION" >> $GITHUB_ENV
+      
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ env.VERSION }}
+        release_name: MP4U ${{ env.VERSION }} Release
+        draft: false
+        prerelease: false
+      
+    - name: Upload Github Release
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: output/output.unitypackage
+        asset_name: MeocapPluginUnity-${{ env.VERSION }}.unitypackage
+        asset_content_type: application/octet-stream
 
     - name: Install ossutil2
       run: |
