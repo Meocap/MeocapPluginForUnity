@@ -106,7 +106,7 @@ namespace Meocap.Perform
             this.inited = true;
         }
 
-        public MeocapSdk.SkelBase SyncBonePosToClient()
+        public SDK.SkelBase SyncBonePosToClient()
         {
             List<Vector3> vecs = new List<Vector3>();
             var index = 0;
@@ -124,19 +124,19 @@ namespace Meocap.Perform
                 index++;
             }
 
-            List<MeocapSdk.SkelJoint> joints = new();
+            List<SDK.SkelJoint> joints = new();
             
             index = 0;
             foreach (var vec in vecs)
             {
                 if (index == 0)
                 {
-                    joints.Add(new MeocapSdk.SkelJoint { pos = new double[] { vecs[0].x, vecs[0].y, vecs[0].z } });
+                    joints.Add(new SDK.SkelJoint { pos = new double[] { vecs[0].x, vecs[0].y, vecs[0].z } });
                 }
                 else
                 {
                     var p = joints[BONE_PARA[index]];
-                    joints.Add(new MeocapSdk.SkelJoint { 
+                    joints.Add(new SDK.SkelJoint { 
                         pos = new double[]
                         {
                             vecs[index].x + p.pos[0],
@@ -152,7 +152,7 @@ namespace Meocap.Perform
 
 
 
-            MeocapSdk.SkelBase ret = new()
+            SDK.SkelBase ret = new()
             { 
                 bones = joints.ToArray(),
                 floor_y = joints[10].pos[1] - joints[0].pos[1]
@@ -169,7 +169,7 @@ namespace Meocap.Perform
 
         }
 
-        public void PerformBone(HumanBodyBones bone,Quaternion rotation, MeocapSdk.MeoFrame frame)
+        public void PerformBone(HumanBodyBones bone,Quaternion rotation, SDK.MeoFrame frame)
         {
             if (this.animatorBones.ContainsKey(bone))
             {
@@ -177,23 +177,23 @@ namespace Meocap.Perform
                 if (transform == null) return;
                 if(bone == HumanBodyBones.Hips)
                 {
-                    transform.position = new Vector3(this.baseHipsPos.x-(float)frame.translation[0] * this.transform.localScale.x, this.baseHipsPos.y+(float)frame.translation[1] * this.transform.localScale.y, this.baseHipsPos.z+(float)frame.translation[2]*this.transform.localScale.z);
+                    transform.position = new Vector3(this.baseHipsPos.x-(float)frame.translation.x * this.transform.localScale.x, this.baseHipsPos.y+(float)frame.translation.y * this.transform.localScale.y, this.baseHipsPos.z+(float)frame.translation.z*this.transform.localScale.z);
                 }
                 transform.rotation = rotation;
             }
         }
 
-        public void Perform(MeocapSdk.MeoFrame frame)
+        public void Perform(SDK.MeoFrame frame)
         {
             if (!this.inited) return;
             List<Quaternion> quats = new List<Quaternion>();
-            MeocapSdk.Joint[] joints = frame.joints;
+            SDK.Joint[] joints = frame.joints;
 
             if (joints.Length == 24)
             {
                 foreach (var item in joints)
                 {
-                    quats.Add(new Quaternion((float)item.glb_rot[0], (float)item.glb_rot[1], (float)item.glb_rot[2], (float)item.glb_rot[3]));
+                    quats.Add(item.glb_rot);
                 }
             }
 

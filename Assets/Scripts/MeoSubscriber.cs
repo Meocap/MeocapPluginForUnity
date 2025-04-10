@@ -2,6 +2,7 @@ using UnityEngine;
 using System;
 using System.Collections.Concurrent;
 using System.Threading;
+using System.Net.Sockets;
 
 namespace Meocap.DataSource
 {
@@ -19,25 +20,37 @@ namespace Meocap.DataSource
         [Header("当前帧ID")]
         public int frameId = 0;
         [Header("将Actor骨架同步至客户端")]
-        public bool syncBonePos = false;
+        public bool syncBonePos = true;
+        [Header("启动时自动连接")]
+        public bool connectOnStart = true;
 
 
-        MeocapSdk.MeoFrame frame;
-        private IntPtr sock_ptr = IntPtr.Zero;
+        Meocap.SDK.MeoFrame frame;
         private volatile bool has_sync_skel = false;
+        private Meocap.SDK.MeocapSocket sock = null;
+        private CancellationTokenSource cancelSource;
+        private ConcurrentQueue<SDK.MeoFrame> frames = new();
 
-        private ConcurrentQueue<MeocapSdk.MeoFrame> frames = new ();
-
-        private bool running_recv_msg = true;
-        private Thread messageThread;
         void Start()
         {
+            if (this.connectOnStart)
+            {
+                this.Connect();
+            }
+
+        }
+
+        void Connect()
+        {
             string[] ip_addr = address.Split('.');
-            if(ip_addr.Length != 4 ) {
+            if (ip_addr.Length != 4)
+            {
                 Debug.LogError("MeoSubscriber: IPAddress Format Error");
                 return;
             }
-            MeocapSdk.Addr addr = new() { 
+
+            Meocap.SDK.Addr addr = new()
+            {
                 a = byte.Parse(ip_addr[0]),
                 b = byte.Parse(ip_addr[1]),
                 c = byte.Parse(ip_addr[2]),
@@ -45,52 +58,45 @@ namespace Meocap.DataSource
                 port = (ushort)port
             };
 
-            var ret = MeocapSdk.Api.meocap_bind_listening_addr(ref addr);
-            
-            if(ret.err.ty == MeocapSdk.ErrorType.None)
-            {
-                this.sock_ptr = ret.socket;
-                messageThread = new Thread(ReceiveMessages);
-                messageThread.Start();
-            }
-
-
-
+            this.sock = new SDK.MeocapSocket(addr);
+            cancelSource = new CancellationTokenSource();
+            StartReceivingLoop(cancelSource.Token);
         }
 
-        private void ReceiveMessages()
+        async private void StartReceivingLoop(CancellationToken token)
         {
-            while (running_recv_msg)
+            while (!token.IsCancellationRequested)
             {
-                var frame = new MeocapSdk.MeoFrame();
-                var ret = MeocapSdk.Api.meocap_recv_frame(this.sock_ptr, ref frame);
-                if (ret.ty == MeocapSdk.ErrorType.None)
+                if (this.sock == null)
                 {
-                    frames.Enqueue(frame);
+                    continue;
                 }
-                Thread.Sleep(10);
+                var frame = await sock.ReceiveFrameAsync();
+                if (frame.HasValue)
+                {
+                    frames.Enqueue(frame.Value);
+                }
             }
         }
-
-
 
         private void Update()
         {
             bool has_new_data = false;
-            while (frames.TryDequeue(out MeocapSdk.MeoFrame new_frame))
+            while (frames.TryDequeue(out SDK.MeoFrame new_frame))
             {
                 frame = new_frame;
                 this.frameId = frame.frame_id;
                 has_new_data = true;
             }
-            if(has_new_data)
+            if (has_new_data)
             {
                 if (this.syncBonePos && !this.has_sync_skel)
                 {
-                    if (this.actor && this.sock_ptr != IntPtr.Zero)
+                    if (this.actor && this.sock != null)
                     {
                         var skel = this.actor.SyncBonePosToClient();
-                        var ret_command = MeocapSdk.Api.meocap_command_set_skel(this.sock_ptr, ref frame.src, ref skel);
+                        sock.SetSkeleton(skel, frame.src);
+                        Debug.Log("Set Skel to MeocapClient");
                         this.has_sync_skel = true;
                     }
                 }
@@ -99,15 +105,14 @@ namespace Meocap.DataSource
                     this.actor.Perform(frame);
                 }
             }
-
         }
 
         private void OnDestroy()
         {
-            running_recv_msg = false;
-            if(this.sock_ptr != IntPtr.Zero)
+            cancelSource.Cancel();
+            if (this.sock != null)
             {
-                MeocapSdk.Api.meocap_clean_up(this.sock_ptr);
+                sock.Dispose();
             }
         }
     }
