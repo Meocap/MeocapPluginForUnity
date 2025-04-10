@@ -20,10 +20,6 @@ namespace Meocap.DataSource
         public int frameId = 0;
         [Header("将Actor骨架同步至客户端")]
         public bool syncBonePos = false;
-        [Header("Command Server IP地址")]
-        public string commandAddress = "127.0.0.1";
-        [Header("Command Servr 端口号")]
-        public short commandPort = 15999;
 
 
         MeocapSdk.MeoFrame frame;
