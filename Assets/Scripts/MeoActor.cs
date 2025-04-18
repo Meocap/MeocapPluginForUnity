@@ -69,7 +69,7 @@ namespace Meocap.Perform
         protected void InitializeBoneOffsets()
         {
             if (animator == null || !animator.isHuman) return;
-
+            this.tPoseOffsets.Clear();
             foreach (HumanBodyBones bone in OrderedHumanBodyBones)
             {
                 if (bone == HumanBodyBones.LastBone) break;
