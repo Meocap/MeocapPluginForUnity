@@ -3,6 +3,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Threading;
 using System.Net.Sockets;
+using System.Threading.Tasks;
 
 namespace Meocap.DataSource
 {
@@ -11,17 +12,17 @@ namespace Meocap.DataSource
     public class MeoSubscriber : MonoBehaviour
     {
         // Start is called before the first frame update
-        [Header("ÉèÖÃ¸ÃÊý¾ÝÔ´°ó¶¨µÄActorÊµÀý")]
+        [Header("ï¿½ï¿½ï¿½Ã¸ï¿½ï¿½ï¿½ï¿½ï¿½Ô´ï¿½ó¶¨µï¿½ActorÊµï¿½ï¿½")]
         public Perform.MeoActor actor;
-        [Header("·¢²¼¶ËIPµØÖ·")]
+        [Header("ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½IPï¿½ï¿½Ö·")]
         public string address = "127.0.0.1";
-        [Header("·¢²¼¶Ë¶Ë¿ÚºÅ")]
+        [Header("ï¿½ï¿½ï¿½ï¿½ï¿½Ë¶Ë¿Úºï¿½")]
         public short port = 14999;
-        [Header("µ±Ç°Ö¡ID")]
+        [Header("ï¿½ï¿½Ç°Ö¡ID")]
         public int frameId = 0;
-        [Header("½«Actor¹Ç¼ÜÍ¬²½ÖÁ¿Í»§¶Ë")]
+        [Header("ï¿½ï¿½Actorï¿½Ç¼ï¿½Í¬ï¿½ï¿½ï¿½ï¿½ï¿½Í»ï¿½ï¿½ï¿½")]
         public bool syncBonePos = true;
-        [Header("Æô¶¯Ê±×Ô¶¯Á¬½Ó")]
+        [Header("ï¿½ï¿½ï¿½ï¿½Ê±ï¿½Ô¶ï¿½ï¿½ï¿½ï¿½ï¿½")]
         public bool connectOnStart = true;
 
 
@@ -63,7 +64,12 @@ namespace Meocap.DataSource
             StartReceivingLoop(cancelSource.Token);
         }
 
-        async private void StartReceivingLoop(CancellationToken token)
+        private void StartReceivingLoop(CancellationToken token)
+        {
+            Task.Run(() => ReceivingLoop(token), token);
+        }
+
+        private void ReceivingLoop(CancellationToken token)
         {
             while (!token.IsCancellationRequested)
             {
@@ -71,7 +77,7 @@ namespace Meocap.DataSource
                 {
                     continue;
                 }
-                var frame = await sock.ReceiveFrameAsync();
+                var frame = sock.ReceiveFrame();
                 if (frame.HasValue)
                 {
                     frames.Enqueue(frame.Value);

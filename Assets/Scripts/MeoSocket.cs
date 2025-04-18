@@ -150,32 +150,40 @@ namespace Meocap.SDK
             udp.Send(bytes, bytes.Length, targetAddr.ToEndPoint());
         }
 
-        public async Task<MeoFrame?> ReceiveFrameAsync()
+        public MeoFrame? ReceiveFrame()
         {
-            UdpReceiveResult result;
             try
             {
-                result = await udp.ReceiveAsync();
+                // 接收数据（同步阻塞）
+                IPEndPoint remoteEndPoint = new IPEndPoint(IPAddress.Any, 0);
+                byte[] buffer = udp.Receive(ref remoteEndPoint);
+
+                // 解析成 JSON
+                string json = Encoding.UTF8.GetString(buffer);
+                UniversalFrame? frame;
+
+                try
+                {
+                    frame = JsonUtility.FromJson<UniversalFrame>(json);
+                }
+                catch
+                {
+                    return null;
+                }
+
+                if (frame == null) return null;
+
+                // 转换成 MeoFrame 返回
+                return ConvertFrame(frame.Value, Addr.FromEndPoint(remoteEndPoint));
             }
             catch (SocketException)
             {
                 return null;
             }
-
-            var json = Encoding.UTF8.GetString(result.Buffer);
-            UniversalFrame? frame;
-
-            try
-            {
-                frame = JsonUtility.FromJson<UniversalFrame>(json);
-            }
             catch
             {
                 return null;
             }
-
-            if (frame == null) return null;
-            return ConvertFrame(frame.Value, Addr.FromEndPoint(result.RemoteEndPoint));
         }
 
         private MeoFrame ConvertFrame(UniversalFrame frame, Addr src)
