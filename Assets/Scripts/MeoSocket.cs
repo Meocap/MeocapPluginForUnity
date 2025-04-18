@@ -1,13 +1,8 @@
-using Palmmedia.ReportGenerator.Core.Common;
 using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Threading.Tasks;
-using UniGLTF;
 using UnityEngine;
 
 namespace Meocap.SDK
