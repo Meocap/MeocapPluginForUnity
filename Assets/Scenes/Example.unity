@@ -424,8 +424,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1216655689}
-  - component: {fileID: 1216655688}
-  - component: {fileID: 1216655687}
   m_Layer: 0
   m_Name: Scripts
   m_TagString: Untagged
@@ -433,33 +431,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1216655687
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1216655686}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 49a22b8a7bb34784b807a45e245b8f3b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
---- !u!114 &1216655688
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1216655686}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3b218fcc0b9ec5a44a6d51248ee6285c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  serverIp: 127.0.0.1
-  port: 8888
-  connectOnLoad: 1
 --- !u!4 &1216655689
 Transform:
   m_ObjectHideFlags: 0
@@ -1732,8 +1703,7 @@ MonoBehaviour:
   port: 14999
   frameId: 0
   syncBonePos: 1
-  command_address: 127.0.0.1
-  command_port: 15999
+  connectOnStart: 1
 --- !u!114 &8785899967845021516
 MonoBehaviour:
   m_ObjectHideFlags: 0
