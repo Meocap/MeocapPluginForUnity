@@ -12,20 +12,20 @@ namespace Meocap.DataSource
     public class MeoSubscriber : MonoBehaviour
     {
         // Start is called before the first frame update
-        [Header("���ø�����Դ�󶨵�Actorʵ��")]
+        [Header("设置要驱动的MeoActor实例")]
         public Perform.MeoActor actor;
-        [Header("������IP��ַ")]
+        [Header("数据来源IP地址")]
         public string address = "127.0.0.1";
-        [Header("�����˶˿ں�")]
+        [Header("数据端口号")]
         public short port = 14999;
-        [Header("��ǰ֡ID")]
+        [Header("Frame ID")]
         public int frameId = 0;
-        [Header("��Actor�Ǽ�ͬ�����ͻ���")]
+        [Header("将骨架同步到客户端")]
         public bool syncBonePos = true;
-        [Header("����ʱ�Զ�����")]
+        [Header("在启动时连接")]
         public bool connectOnStart = true;
 
-
+        private Thread _receiveThread;
         Meocap.SDK.MeoFrame frame;
         private volatile bool has_sync_skel = false;
         private Meocap.SDK.MeocapSocket sock = null;
@@ -66,7 +66,9 @@ namespace Meocap.DataSource
 
         private void StartReceivingLoop(CancellationToken token)
         {
-            Task.Run(() => ReceivingLoop(token), token);
+            _receiveThread = new Thread(() => ReceivingLoop(token));
+            _receiveThread.IsBackground = true;
+            _receiveThread.Start();
         }
 
         private void ReceivingLoop(CancellationToken token)
