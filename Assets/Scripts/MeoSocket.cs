@@ -14,6 +14,7 @@ namespace Meocap.SDK
 {
     #region 数据结构
 
+    [UnityEngine.Scripting.Preserve]
     [Serializable]
     public struct Addr
     {
@@ -36,12 +37,14 @@ namespace Meocap.SDK
         }
     }
 
+    [UnityEngine.Scripting.Preserve]
     [Serializable]
     public struct Xyz
     {
         public double x, y, z;
     }
 
+    [UnityEngine.Scripting.Preserve]
     [Serializable]
     public struct JointRot
     {
@@ -49,6 +52,7 @@ namespace Meocap.SDK
         public Xyz rot;
     }
 
+    [UnityEngine.Scripting.Preserve]
     [Serializable]
     public struct BlendShape
     {
@@ -56,6 +60,7 @@ namespace Meocap.SDK
         public float value;
     }
 
+    [UnityEngine.Scripting.Preserve]
     [Serializable]
     public struct ExtraCaptureResult
     {
@@ -64,6 +69,7 @@ namespace Meocap.SDK
         public List<BlendShape> faces;
     }
 
+    [UnityEngine.Scripting.Preserve]
     [Serializable]
     public struct UniversalFrame
     {
@@ -78,12 +84,15 @@ namespace Meocap.SDK
         public ExtraCaptureResult? extra_result;
     }
 
+    [UnityEngine.Scripting.Preserve]
     [Serializable]
     public struct SkelJoint
     {
         public double[] pos; // length = 3
     }
 
+
+    [UnityEngine.Scripting.Preserve]
     [Serializable]
     public struct SkelBase
     {
@@ -91,6 +100,7 @@ namespace Meocap.SDK
         public double floor_y;
     }
 
+    [UnityEngine.Scripting.Preserve]
     [Serializable]
     public struct Joint
     {
@@ -99,12 +109,14 @@ namespace Meocap.SDK
         public Quaternion loc_rot; // length = 4
     }
 
+    [UnityEngine.Scripting.Preserve]
     [Serializable]
     public struct SetSkelPayload
     {
         public SkelBase SetSkel;
     }
 
+    [UnityEngine.Scripting.Preserve]
     [Serializable]
     public struct RetBlendShape
     {
@@ -112,6 +124,7 @@ namespace Meocap.SDK
         public double value;
     }
 
+    [UnityEngine.Scripting.Preserve]
     [Serializable]
     public struct MeoFrame
     {
@@ -133,9 +146,15 @@ namespace Meocap.SDK
         public MeocapSocket(Addr bindAddr)
         {
             udp = new UdpClient(bindAddr.ToEndPoint());
-            udp.Client.ReceiveTimeout = 250;
+            udp.Client.ReceiveTimeout = 1000;
             udp.Client.SendTimeout = 250;
 
+        }
+
+        static MeocapSocket()
+        {
+            //显式调用，让AOT尝试编译
+            JsonUtility.FromJson<UniversalFrame>("{}");
         }
 
         public void SetSkeleton(SkelBase skel, Addr targetAddr)
@@ -154,37 +173,50 @@ namespace Meocap.SDK
         {
             try
             {
-                // 接收数据（同步阻塞）
                 IPEndPoint remoteEndPoint = new IPEndPoint(IPAddress.Any, 0);
                 byte[] buffer = udp.Receive(ref remoteEndPoint);
-
-                // 解析成 JSON
                 string json = Encoding.UTF8.GetString(buffer);
                 UniversalFrame? frame;
 
                 try
                 {
-                    frame = JsonUtility.FromJson<UniversalFrame>(json);
+                    object obj = JsonUtility.FromJson(json, typeof(UniversalFrame));
+                    if (obj is UniversalFrame uf)
+                    {
+                        frame = uf;
+                    }
+                    else
+                    {
+                        frame = null;
+                    }
                 }
-                catch
+                catch (Exception ex)
                 {
+                    Debug.LogError($"[MeoSubscriber] JSON 解析失败: {ex.Message}");
                     return null;
                 }
 
-                if (frame == null) return null;
+                if (frame == null)
+                {
+                    Debug.LogWarning("[MeoSubscriber] 接收到的帧为空");
+                    return null;
+                }
 
-                // 转换成 MeoFrame 返回
+                // 转换并返回
                 return ConvertFrame(frame.Value, Addr.FromEndPoint(remoteEndPoint));
             }
-            catch (SocketException)
+            catch (SocketException ex)
             {
+                Debug.LogWarning($"[MeoSubscriber] Socket 异常: {ex.Message}");
                 return null;
             }
-            catch
+            catch (Exception ex)
             {
+                Debug.LogError($"[MeoSubscriber] 未知异常: {ex}");
                 return null;
             }
         }
+
 
         private MeoFrame ConvertFrame(UniversalFrame frame, Addr src)
         {
