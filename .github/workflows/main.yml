@@ -19,7 +19,6 @@ jobs:
         find Assets/Editor -name *.meta >> packageList
         find Assets/Scripts -name Meo*.meta >> packageList
         find Assets/Scripts -name meocap*.meta >> packageList
-        find Assets/Plugins -name *.meta >> packageList
 
     - run: mkdir output
     
