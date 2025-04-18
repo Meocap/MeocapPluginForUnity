@@ -54,6 +54,15 @@ namespace Meocap.Perform
         }
 
 
+        public void InitFromTPose()
+        {
+            InitializeAnimatorHumanBones();
+            InitializeBoneOffsets();
+            this.inited = true;
+        }
+
+
+
         /// <summary>
         /// Calculate Character's offset based on its T Pose and Newton's T Pose.
         /// </summary>
@@ -101,9 +110,7 @@ namespace Meocap.Perform
 
         void Start()
         {
-            InitializeAnimatorHumanBones();
-            InitializeBoneOffsets();
-            this.inited = true;
+            this.InitFromTPose();
         }
 
         public SDK.SkelBase SyncBonePosToClient()
